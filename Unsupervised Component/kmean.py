@@ -1,34 +1,86 @@
-import numpy as np
-import matplotlib.pyplot as plt
 import pandas as pd
-dataset = pd.read_csv('Mall_Customers.csv')
-xlab = dataset.iloc[:, [3, 4]].values
+import numpy as np
+import random
 
-from sklearn.cluster import KMeans
-ylab = []
-for i in range(1, 11):
-    kmeans = KMeans(n_clusters = i, init = 'k-means++', random_state = 42)
-    kmeans.fit(xlab)
-    ylab.append(kmeans.inertia_)
-plt.plot(range(1, 11), ylab)
-plt.title('Elbow Method')
-plt.xlabel('Number of Clusters')
-plt.ylabel('lab')
-plt.show()
+df=pd.read_csv("Mall_Customers.csv")
+print (df.shape) 
+print ("\nSample information\n\n",df.head)
+print ("\n\nSample stats\n\n",df.describe)
+x_lab=df.iloc[:,[3,4]].values
+for item in x_lab:
+    print (item)
+y_lab=[]
 
+def random_centers(dim,k): 
+    centers=[] 
+    for i in range(k):
+        center=[] 
+        for d in range(dim):
+            rand=random.randint(0,110)
+            center.append(rand)
+        centers.append(center) 
+    return centers
 
-kmeans = KMeans(n_clusters = 5, init = 'k-means++', random_state = 42)
-y_kmeans = kmeans.fit_predict(xlab)
+def point_clustering(data, centers, dim, first_cluster=False): 
+    for point in data:
+        nearest_center, nearest_center_distance = 0, None 
+        for i in range(0,len(centers)):
+            euc_distance=0 
+            for d in range(0,dim):
+                dist=abs(point[d] - centers[i][d])
+                euc_distance+=dist
+            euc_distance=np.sqrt(euc_distance)
+            if nearest_center_distance == None or nearest_center_distance > euc_distance:
+                nearest_center_distance = euc_distance 
+                nearest_center = i 
+        if first_cluster:
+            point.append(nearest_center) 
+        else:
+            point[-1]=nearest_center 
+    return data 
+                
+def mean_center(data,centers,dim): 
+    print ("Centers : ", centers,"\nDim : ",dim)
+    new_centers=[]
+    for i in range(len(centers)):
+        new_center, total_of_points, number_of_points = [], [] , 0 
+        for point in data:
+            if point[-1] == i:
+                number_of_points+=1 
+                for d in range(0,dim):
+                    if d < len(total_of_points):
+                        total_of_points[d]+=point[d]
+                    else:
+                        total_of_points.append(point[d]) 
+        if len(total_of_points) != 0:
+            for d in range(0,dim):
+                print ("Point total : ",total_of_points,"Dim : ",d)
+                new_center.append(total_of_points[d]/number_of_points)
+            new_centers.append(new_center)
+        else:
+            new_centers.append(centers[i])
+    return new_centers
+def train_k_mean_clustering(data, k, epochs):
+    dims=len(data[0])
+    print ("Data[0] : ",data[0])
+    centers=random_centers(dims,k) 
+    
+    clustered_data=point_clustering(data,centers,dims,first_cluster=True)
+    
+    for i in range(epochs):
+        centers=mean_center(clustered_data, centers, dims) 
+        clustered_data=point_clustering(data, centers, dims, first_cluster=False) 
+    
+    return centers
+          
+new_x_lab=x_lab #processing the data to suit the algorithm format
+new_list = [] 
+for i in range(len(new_x_lab)):
+    temp=[]
+    temp.append(new_x_lab[i][0])
+    temp.append(new_x_lab[i][1])
+    new_list.append(temp) 
 
+centers = train_k_mean_clustering(new_list,5,1000) 
 
-plt.scatter(xlab[y_kmeans==0,0],xlab[y_kmeans==0,1],s=100,c='blue',label='Cluster 1')
-plt.scatter(xlab[y_kmeans==1,0],xlab[y_kmeans==1,1],s=100,c='green',label='Cluster 2')
-plt.scatter(xlab[y_kmeans==2,0],xlab[y_kmeans==2,1],s=100,c='grey',label='Cluster 3')
-plt.scatter(xlab[y_kmeans==3,0],xlab[y_kmeans==3,1],s=100,c='red',label='Cluster 4')
-plt.scatter(xlab[y_kmeans==4,0],xlab[y_kmeans==4,1],s=100,c='orange',label='Cluster 5')
-plt.scatter(kmeans.cluster_centers_[:, 0],kmeans.cluster_centers_[:,1],s=300,c='yellow',label= 'Centroids')
-plt.title('Customer Clusters')
-plt.xlabel('Annual Income in Dollars')
-plt.ylabel('SpendingScore(1-100)')
-plt.legend()
-plt.show()
+print ("\nCalculated Centers : ",centers)
