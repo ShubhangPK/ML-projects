@@ -1,5 +1,6 @@
 # ML-projects
-Mini Project by Shubhang , Vallabh and Hrishikesh
+Mini Project by Shubhang , Vallabh and Hrishikesh 
+<br>
 Team Name : Heuristic_Disruptors
 
 Video Links :
